@@ -178,6 +178,6 @@ common_df['pe'] = pes
 common_df = common_df.sort_values(by='pe', na_position='last').reset_index(drop=True)
 
 common_df.to_csv(OUT_DIR/"common_with_pe_sorted.csv", index=False)
-common_df.to_excel(OUT_DIR/"common_with_pe_sorted.xlsx", index=False)
+# common_df.to_excel(OUT_DIR/"common_with_pe_sorted.xlsx", index=False)
 
 print("Done. Outputs in outputs/ directory")
