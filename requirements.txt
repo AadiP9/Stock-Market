@@ -1,4 +1,5 @@
 pandas
 requests
 yfinance
-openpyxl
+gspread
+google-auth
