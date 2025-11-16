@@ -31,7 +31,9 @@ date_suffix = datetime.utcnow().strftime("%Y-%m-%d")
 sheet_name = f"common_with_sorted_pe-{date_suffix}"
 
 print("Creating Google Sheet:", sheet_name)
-sh = gc.create(sheet_name)
+# sh = gc.create(sheet_name)
+folder_id = "1iGPfXHH24JBty8Oz_CzgRAt13ku_c8Lv"
+sh = gc.create(sheet_name, folder_id)
 
 target_email = os.environ.get("TARGET_EMAIL")
 if target_email:
