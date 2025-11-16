@@ -2,8 +2,8 @@ name: daily-pe-to-google-sheets
 
 on:
   schedule:
-    - cron: "30 4 * * *"   # 04:30 UTC = 10:00 AM IST
-  workflow_dispatch:       # allow manual runs
+    - cron: "30 4 * * *"   # 10:00 AM IST (04:30 UTC)
+  workflow_dispatch:
 
 jobs:
   build:
@@ -28,11 +28,17 @@ jobs:
       - name: Run main script
         run: python main.py
 
-      - name: List files (debug)
+      - name: List files
         run: ls -lah
 
       - name: Write service account key
         run: echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" > /tmp/gcp.json
+
+      - name: DEBUG PRINT JSON (masked)
+        run: |
+          sed 's/-----BEGIN PRIVATE KEY-----/PRIVATE_KEY_START/g' /tmp/gcp.json \
+          | sed 's/-----END PRIVATE KEY-----/PRIVATE_KEY_END/g' \
+          | sed 's/[A-Za-z0-9/+]\{20,\}/MASKED/g'
 
       - name: Upload CSV to Google Sheets
         run: python upload_to_sheets.py
