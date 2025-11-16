@@ -1,4 +1,3 @@
-# upload_to_sheets.py
 import os
 import pandas as pd
 from datetime import datetime
@@ -6,17 +5,14 @@ import gspread
 from google.oauth2.service_account import Credentials
 import sys
 
-CSV_FILENAME = "common_with_sorted_pe.csv"  # must match output from main.py
+CSV_FILENAME = "common_with_sorted_pe.csv"
 
-# Check that the CSV exists
 if not os.path.exists(CSV_FILENAME):
     print(f"ERROR: {CSV_FILENAME} not found. main.py did not create it.")
     sys.exit(2)
 
-# Load CSV
 df = pd.read_csv(CSV_FILENAME)
 
-# Load service account credentials
 if not os.path.exists("/tmp/gcp.json"):
     print("ERROR: /tmp/gcp.json not found. Secret did not load.")
     sys.exit(3)
@@ -31,23 +27,19 @@ creds = Credentials.from_service_account_file(
 
 gc = gspread.authorize(creds)
 
-# Create a new sheet with today's date appended
 date_suffix = datetime.utcnow().strftime("%Y-%m-%d")
 sheet_name = f"common_with_sorted_pe-{date_suffix}"
 
-print("Creating new Google Sheet:", sheet_name)
+print("Creating Google Sheet:", sheet_name)
 sh = gc.create(sheet_name)
 
-# Share with your Gmail address (from GitHub Secrets)
 target_email = os.environ.get("TARGET_EMAIL")
 if target_email:
     sh.share(target_email, perm_type="user", role="writer")
     print("Shared with:", target_email)
 
-# Write data into the sheet
 ws = sh.get_worksheet(0)
 rows = [df.columns.tolist()] + df.fillna("").astype(str).values.tolist()
 ws.update(rows)
 
-print("Upload complete.")
-print("Sheet URL:", sh.url)
+print("Upload complete. Sheet URL:", sh.url)
