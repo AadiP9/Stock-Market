@@ -31,8 +31,13 @@ jobs:
       - name: List files
         run: ls -lah
 
-      - name: Write service account key
-        run: echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" > /tmp/gcp.json
+      # - name: Write service account key
+      #   run: echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" > /tmp/gcp.json
+
+      - name: Decode service account JSON
+        run: |
+          echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" | base64 -d > /tmp/gcp.json
+
 
       - name: DEBUG PRINT JSON (masked)
         run: |
