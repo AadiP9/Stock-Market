@@ -4,9 +4,6 @@ import io
 import yfinance as yf
 import time
 
-# ----------------------------------------------------------
-# 1. CSV URLs for India (CompaniesMarketCap)
-# ----------------------------------------------------------
 CSV_URLS = {
     "marketcap": "https://companiesmarketcap.com/inr/?download=csv",
     "revenue": "https://companiesmarketcap.com/inr/largest-companies-by-revenue/?download=csv",
@@ -15,26 +12,18 @@ CSV_URLS = {
 
 TOP_N = 100
 
-# ----------------------------------------------------------
-# Helper functions
-# ----------------------------------------------------------
-
 def download_csv(url):
-    """Download CSV from CompaniesMarketCap."""
     r = requests.get(url, timeout=30, headers={"User-Agent": "Mozilla/5.0"})
     r.raise_for_status()
     return pd.read_csv(io.StringIO(r.text))
 
 def clean_df(df):
-    """Ensure Name and Symbol columns exist and are clean."""
     df = df.copy()
-
-    # Fix column variations
     if "Name" not in df.columns:
         if "name" in df.columns:
             df["Name"] = df["name"]
         else:
-            raise ValueError("Name column missing")
+            raise ValueError("Missing Name column")
 
     if "Symbol" not in df.columns:
         if "symbol" in df.columns:
@@ -44,36 +33,27 @@ def clean_df(df):
 
     df["Name"] = df["Name"].astype(str).str.strip()
     df["Symbol"] = df["Symbol"].astype(str).str.strip()
-    
     return df
 
 def fetch_pe(symbol):
-    """Fetch P/E using yfinance only."""
     try:
         t = yf.Ticker(symbol)
-        info = t.info
-        pe = info.get("trailingPE")
+        pe = t.info.get("trailingPE")
         if pe is not None:
             return float(pe)
-    except Exception:
+    except:
         pass
 
-    # Try NSE suffix if missing
     if symbol and symbol.isalpha():
         try:
             t = yf.Ticker(symbol + ".NS")
-            info = t.info
-            pe = info.get("trailingPE")
+            pe = t.info.get("trailingPE")
             if pe is not None:
                 return float(pe)
-        except Exception:
+        except:
             pass
 
     return None
-
-# ----------------------------------------------------------
-# 2. Download and clean the 3 datasets
-# ----------------------------------------------------------
 
 print("Downloading CSVs...")
 
@@ -85,10 +65,6 @@ for key, url in CSV_URLS.items():
     dfs[key] = df
     print(f"{key} columns:", df.columns.tolist())
 
-# ----------------------------------------------------------
-# 3. Find common companies by exact Name match
-# ----------------------------------------------------------
-
 names_marketcap = set(dfs["marketcap"]["Name"])
 names_revenue = set(dfs["revenue"]["Name"])
 names_earnings = set(dfs["earnings"]["Name"])
@@ -99,13 +75,8 @@ print("Common companies count:", len(common_names))
 
 common_df = pd.DataFrame({"Name": list(common_names)})
 
-# Attach Symbols (use marketcap dataset as primary)
 symbol_map = dfs["marketcap"].set_index("Name")["Symbol"].to_dict()
 common_df["Symbol"] = common_df["Name"].map(lambda x: symbol_map.get(x, None))
-
-# ----------------------------------------------------------
-# 4. Fetch P/E ratios
-# ----------------------------------------------------------
 
 pe_values = []
 print("\nFetching P/E values...")
@@ -113,23 +84,18 @@ print("\nFetching P/E values...")
 for i, row in common_df.iterrows():
     name = row["Name"]
     symbol = row["Symbol"]
-
     pe = None
-    if symbol not in [None, "None", "", "nan"]:
+
+    if symbol not in ["None", None, "", "nan"]:
         pe = fetch_pe(symbol)
-    
+
     pe_values.append(pe)
     print(f"{i+1}/{len(common_df)} | {name} ({symbol}) → PE: {pe}")
-    time.sleep(0.25)  # polite delay
+    time.sleep(0.25)
 
 common_df["PE"] = pe_values
-
-# ----------------------------------------------------------
-# 5. Sort by P/E and save as CSV
-# ----------------------------------------------------------
-
 common_df = common_df.sort_values(by="PE", na_position="last")
+
 common_df.to_csv("common_with_sorted_pe.csv", index=False)
 
 print("\nSaved: common_with_sorted_pe.csv")
-print("Task complete.")
